@@ -2,18 +2,19 @@ import { gql } from '@apollo/client';
 
 import { Sequence } from '../../../types';
 
-export type DuplicateSequenceInput = number;
-
 export interface DuplicateSequenceResponse {
-  message: string;
-  sequence: Sequence;
-  success: boolean;
+  duplicateSequence: {
+    sequence: Sequence;
+  };
 }
+
+export type DuplicateSequenceVariables = {
+  id: number;
+};
 
 export const DUPLICATE_SEQUENCE = gql`
   mutation DuplicateSequence($id: Int!) {
     duplicateSequence(id: $id) {
-      message
       sequence {
         id
         measureCount
@@ -32,7 +33,6 @@ export const DUPLICATE_SEQUENCE = gql`
           id
         }
       }
-      success
     }
   }
 `;

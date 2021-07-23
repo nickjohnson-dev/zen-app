@@ -10,9 +10,7 @@ export interface CreateSongVariables {
 
 export interface CreateSongResponse {
   createSong: {
-    message: string;
     song: Pick<Song, 'id' | 'name' | 'updatedAt'>;
-    success: boolean;
   };
 }
 
@@ -24,7 +22,6 @@ export const CREATE_SONG = gql`
         name
         updatedAt
       }
-      success
     }
   }
 `;

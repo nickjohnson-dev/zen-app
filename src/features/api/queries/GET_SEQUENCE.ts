@@ -2,12 +2,12 @@ import { gql } from '@apollo/client';
 
 import { Sequence } from '../../../types';
 
-export interface GetSequenceInput {
-  id: number;
+export interface GetSequenceResponse {
+  sequence: Sequence;
 }
 
-export interface GetSequenceResponse {
-  sequence: Sequence | null;
+export interface GetSequenceVariables {
+  id: number;
 }
 
 export const GET_SEQUENCE = gql`

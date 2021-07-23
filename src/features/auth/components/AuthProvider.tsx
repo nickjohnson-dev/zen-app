@@ -1,20 +1,22 @@
 import { FC, ProviderProps, useCallback, useEffect, useState } from 'react';
 
-import { useLogout, useMe } from '../../api';
+import { urqlHooks, useClient } from '../../api';
 import { AuthContext, AuthContextValue } from '../contexts/AuthContext';
 
 export const AuthProvider: FC<Partial<ProviderProps<AuthContextValue>>> = (
   props,
 ) => {
-  const { data, error, loading, refetch } = useMe();
-  const [logout] = useLogout();
+  const { resetClient } = useClient();
+  const [{ data, error, fetching }] = urqlHooks.useMe();
+  const [, logout] = urqlHooks.useLogout();
   const [expiresAt, setExpiresAt] = useState<number>();
-
+  console.log('AuthProvider rerender');
   const handleLogout = useCallback(async () => {
     await logout();
     setExpiresAt(undefined);
     window.localStorage.removeItem('expiresAt');
-  }, [logout, setExpiresAt]);
+    resetClient();
+  }, [logout, resetClient, setExpiresAt]);
 
   const getIsAuthenticated = useCallback(
     () => !!expiresAt && new Date().getTime() / 1000 < expiresAt,
@@ -25,9 +27,8 @@ export const AuthProvider: FC<Partial<ProviderProps<AuthContextValue>>> = (
     (loginResult) => {
       setExpiresAt(loginResult.expiresAt);
       window.localStorage.setItem('expiresAt', loginResult.expiresAt);
-      refetch();
     },
-    [refetch, setExpiresAt],
+    [setExpiresAt],
   );
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export const AuthProvider: FC<Partial<ProviderProps<AuthContextValue>>> = (
         getIsAuthenticated,
         handleLogin,
         logout: handleLogout,
-        loading,
+        loading: fetching,
         user: data?.me,
       }}
       {...props}

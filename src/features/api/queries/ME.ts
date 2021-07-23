@@ -6,6 +6,8 @@ export interface MeResponse {
   me: Omit<User, 'songs'>;
 }
 
+export type MeVariables = Record<string, never>;
+
 export const ME = gql`
   query Me {
     me {

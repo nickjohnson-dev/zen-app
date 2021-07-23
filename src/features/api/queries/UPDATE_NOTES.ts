@@ -2,21 +2,22 @@ import { gql } from '@apollo/client';
 
 import { Note, Point } from '../../../types';
 
-export interface UpdateNotesInput {
-  id: number;
-  points: Point[];
+export interface UpdateNotesResponse {
+  updateNotes: {
+    notes: Note[];
+  };
 }
 
-export interface UpdateNotesResponse {
-  message: string;
-  notes: Note[];
-  success: boolean;
+export interface UpdateNotesVariables {
+  input: {
+    id: number;
+    points: Point[];
+  };
 }
 
 export const UPDATE_NOTES = gql`
   mutation UpdateNotes($input: UpdateNotesInput!) {
     updateNotes(input: $input) {
-      message
       notes {
         id
         points {
@@ -27,7 +28,6 @@ export const UPDATE_NOTES = gql`
           id
         }
       }
-      success
     }
   }
 `;

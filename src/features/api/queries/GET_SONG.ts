@@ -3,7 +3,7 @@ import { gql } from '@apollo/client';
 import { Song } from '../../../types';
 
 export interface GetSongResponse {
-  song: Song | null;
+  song: Song;
 }
 
 export interface GetSongVariables {

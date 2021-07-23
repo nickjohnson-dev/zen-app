@@ -6,12 +6,7 @@ import { useHistory, useParams, useRouteMatch } from 'react-router-dom';
 
 import {
   getTempId,
-  useCreateSequence,
-  useCreateTrack,
-  useDeleteSequence,
-  useDeleteTrack,
-  useDuplicateSequence,
-  useGetSong,
+  urqlHooks,
   useUpdateSequence,
   useUpdateSong,
   useUpdateTrack,
@@ -32,13 +27,13 @@ export const TracksEditor: FC<TracksEditorProps> = () => {
   const { songId: songIdProp } = useParams<TracksEditorParams>();
   const songId = songIdProp ? parseInt(songIdProp) : -1;
   const audioManager = useAudioManager();
-  const [createSequence] = useCreateSequence();
-  const [createTrack] = useCreateTrack();
-  const [deleteSequence] = useDeleteSequence();
-  const [deleteTrack] = useDeleteTrack();
-  const [duplicateSequence] = useDuplicateSequence();
+  const [, createSequence] = urqlHooks.useCreateSequence();
+  const [, createTrack] = urqlHooks.useCreateTrack();
+  const [, deleteSequence] = urqlHooks.useDeleteSequence();
+  const [, deleteTrack] = urqlHooks.useDeleteTrack();
+  const [, duplicateSequence] = urqlHooks.useDuplicateSequence();
   const history = useHistory();
-  const { data, error, loading } = useGetSong({
+  const [{ data, error, fetching }] = urqlHooks.useGetSong({
     variables: {
       id: songId,
     },
@@ -49,8 +44,8 @@ export const TracksEditor: FC<TracksEditorProps> = () => {
   const [updateSequence] = useUpdateSequence();
   const [updateSong] = useUpdateSong();
   const [updateTrack] = useUpdateTrack();
-  const [selectedSequenceId, setSelectedSequenceId] = useState(-1);
-  const [selectedTrackId, setSelectedTrackId] = useState(-1);
+  const [selectedSequenceId, setSelectedSequenceId] = useState<number>();
+  const [selectedTrackId, setSelectedTrackId] = useState<number>();
 
   const tracks = useMemo(() => {
     return data?.song?.tracks ?? [];
@@ -76,9 +71,14 @@ export const TracksEditor: FC<TracksEditorProps> = () => {
 
   const handleSequenceAdd = useCallback(
     ({ position, track }) => {
-      createSequence({ position, songId, trackId: track.id });
+      createSequence(
+        {
+          input: { position, trackId: track.id },
+        },
+        { additionalTypenames: ['Song'] },
+      );
     },
-    [createSequence, songId],
+    [createSequence],
   );
 
   const handleSequenceDelete = useCallback(
@@ -87,12 +87,12 @@ export const TracksEditor: FC<TracksEditorProps> = () => {
 
       if (!selectedSequence) return;
 
-      deleteSequence({
-        sequence: selectedSequence,
-        songId,
-      });
+      deleteSequence(
+        { id: selectedSequence.id },
+        { additionalTypenames: ['Song'] },
+      );
     },
-    [deleteSequence, selectedSequence, songId],
+    [deleteSequence, selectedSequence],
   );
 
   const handleSequenceDuplicate = useCallback(
@@ -105,15 +105,18 @@ export const TracksEditor: FC<TracksEditorProps> = () => {
 
       setSelectedSequenceId(tempId);
 
-      const duplicatedSequence = await duplicateSequence({
-        sequence: selectedSequence,
-        songId,
-        tempId,
-      });
+      const { data } = await duplicateSequence(
+        {
+          id: selectedSequence.id,
+        },
+        { additionalTypenames: ['Song'] },
+      );
 
-      setSelectedSequenceId(duplicatedSequence.id);
+      if (data?.duplicateSequence.sequence) {
+        setSelectedSequenceId(data?.duplicateSequence.sequence.id);
+      }
     },
-    [duplicateSequence, selectedSequence, songId],
+    [duplicateSequence, selectedSequence],
   );
 
   const handleSequenceEdit = useCallback(
@@ -162,9 +165,9 @@ export const TracksEditor: FC<TracksEditorProps> = () => {
     (track) => {
       handleTrackDeselect();
 
-      deleteTrack({ songId, track });
+      deleteTrack({ id: track.id }, { additionalTypenames: ['Song'] });
     },
-    [deleteTrack, handleTrackDeselect, songId],
+    [deleteTrack, handleTrackDeselect],
   );
 
   const handleTrackEdit = useCallback(
@@ -192,7 +195,7 @@ export const TracksEditor: FC<TracksEditorProps> = () => {
   }, []);
 
   const handleTrackListTrackAdd = useCallback(() => {
-    createTrack({ songId });
+    createTrack({ input: { songId } }, { additionalTypenames: ['Song'] });
   }, [createTrack, songId]);
 
   const handleTrackSelect = useCallback((track) => {
@@ -226,9 +229,9 @@ export const TracksEditor: FC<TracksEditorProps> = () => {
           DUPLICATE: ['ctrl+shift+d', 'meta+shift+d'],
         }}
       />
-      {loading && <LoadingIndicator>LOADING SONG...</LoadingIndicator>}
-      {!loading && error && <div>Failed to load song</div>}
-      {!loading && !error && (
+      {fetching && <LoadingIndicator>LOADING SONG...</LoadingIndicator>}
+      {!fetching && error && <div>Failed to load song</div>}
+      {!fetching && !error && (
         <>
           <TrackList
             onPositionSet={handleTrackListPositionSet}
@@ -258,7 +261,7 @@ export const TracksEditor: FC<TracksEditorProps> = () => {
         }
         offset={position * 2 + 16}
       />
-      {!loading && (
+      {!fetching && (
         <TrackEditingModal
           onClose={handleTrackDeselect}
           onDelete={handleTrackDelete}

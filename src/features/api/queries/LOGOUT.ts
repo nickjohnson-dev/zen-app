@@ -6,6 +6,8 @@ export interface LogoutResponse {
   };
 }
 
+export type LogoutVariables = Record<string, never>;
+
 export const LOGOUT = gql`
   mutation Logout {
     logout {

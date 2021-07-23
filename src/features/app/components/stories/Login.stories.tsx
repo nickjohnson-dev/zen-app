@@ -1,36 +1,17 @@
-import { MockedProvider, MockedResponse } from '@apollo/client/testing';
 import { Meta, Story } from '@storybook/react';
+import { graphql } from 'msw';
 import { FC, ProviderProps, useCallback } from 'react';
 import { MemoryRouter } from 'react-router';
 import { Route, Switch } from 'react-router-dom';
 
-import { LOGIN, LoginResponse } from '../../../api';
+import { ClientProvider, LoginResponse, LoginVariables } from '../../../api';
 import {
   AuthContext,
   AuthContextValue,
 } from '../../../auth/contexts/AuthContext';
+import { Shell } from '../../../shared';
 import { Login } from '../Login';
 import { PrivateRoute } from '../PrivateRoute';
-
-const mocks: MockedResponse<Record<string, any>>[] = [
-  {
-    request: {
-      query: LOGIN,
-      variables: {
-        email: 'user@ariaapp.io',
-        password: 'password',
-      },
-    },
-    result: {
-      data: {
-        login: {
-          expiresAt: 9999999999,
-          success: true,
-        },
-      } as LoginResponse,
-    },
-  },
-];
 
 const MockAuthProvider: FC<
   Partial<ProviderProps<AuthContextValue>> & {
@@ -50,63 +31,81 @@ const MockAuthProvider: FC<
   />
 );
 
-interface LoginArgs {
-  mockIsAuthenticated: boolean;
-  mockHandleLogin: boolean;
-}
-
 export default {
   component: Login,
   title: 'App/Login',
   argTypes: {
-    component: { control: false },
-    default: { table: { disable: true } },
     mockIsAuthenticated: {
       control: { type: 'boolean' },
     },
     mockHandleLogin: {
       action: 'handleLogin',
     },
-    location: { table: { disable: true } },
-    navigate: { table: { disable: true } },
-    path: { table: { disable: true } },
-    uri: { table: { disable: true } },
   },
-  decorators: [
-    (Story, { args }) => {
-      const { mockIsAuthenticated, mockHandleLogin } = args;
+  parameters: {
+    layout: 'fullscreen',
+    msw: [
+      graphql.query('IntrospectionQuery', (req, res, ctx) => res(ctx.data({}))),
+      graphql.mutation<LoginResponse, LoginVariables>(
+        'Login',
+        (req, res, ctx) => {
+          const { email, password } = req.variables;
 
-      const getIsAuthenticated = useCallback(
-        () => mockIsAuthenticated,
-        [mockIsAuthenticated],
-      );
+          if (email !== 'user@ariaapp.io' || password !== 'password') {
+            return res(
+              ctx.errors([{ message: 'The email or password was incorrect.' }]),
+            );
+          }
 
-      return (
-        <MockedProvider mocks={mocks}>
-          <MockAuthProvider
-            valueOverrides={{
-              getIsAuthenticated,
-              handleLogin: mockHandleLogin,
-            }}
-          >
-            <MemoryRouter initialEntries={['/login']}>
-              <Switch>
-                <Route path="/login">{Story()}</Route>
-                <PrivateRoute path="/">Logged In!</PrivateRoute>
-              </Switch>
-            </MemoryRouter>
-          </MockAuthProvider>
-        </MockedProvider>
-      );
-    },
-  ],
-} as Meta<LoginArgs>;
+          return res(
+            ctx.data({
+              login: {
+                expiresAt: 9999999999,
+                success: true,
+              },
+            }),
+          );
+        },
+      ),
+    ],
+  },
+} as Meta;
+
+interface LoginArgs {
+  mockIsAuthenticated: boolean;
+  mockHandleLogin: (loginResult: { expiresAt: number }) => void;
+}
 
 export const Default: Story<LoginArgs> = ({
   mockIsAuthenticated,
   mockHandleLogin,
   ...rest
-}) => <Login {...rest} />;
+}) => {
+  const getIsAuthenticated = useCallback(
+    () => mockIsAuthenticated,
+    [mockIsAuthenticated],
+  );
+
+  return (
+    <ClientProvider>
+      <MockAuthProvider
+        valueOverrides={{
+          getIsAuthenticated,
+          handleLogin: mockHandleLogin,
+        }}
+      >
+        <MemoryRouter initialEntries={['/login']}>
+          <Shell>
+            <Switch>
+              <Route path="/login">{<Login {...rest} />}</Route>
+              <PrivateRoute path="/">Logged In!</PrivateRoute>
+            </Switch>
+          </Shell>
+        </MemoryRouter>
+      </MockAuthProvider>
+    </ClientProvider>
+  );
+};
 
 Default.args = {
   mockIsAuthenticated: false,

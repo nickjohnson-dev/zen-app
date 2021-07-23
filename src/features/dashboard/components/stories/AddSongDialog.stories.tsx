@@ -1,10 +1,9 @@
-import { MockedProvider, MockedResponse } from '@apollo/client/testing';
 import { Meta, Story } from '@storybook/react';
 import { formatISO } from 'date-fns';
-import { GraphQLError } from 'graphql';
+import { graphql } from 'msw';
 
 import {
-  CREATE_SONG,
+  ClientProvider,
   CreateSongResponse,
   CreateSongVariables,
 } from '../../../api';
@@ -13,55 +12,58 @@ import { AddSongDialog, AddSongDialogProps } from '../AddSongDialog';
 export default {
   component: AddSongDialog,
   title: 'Dashboard/AddSongDialog',
+  parameters: {
+    layout: 'fullscreen',
+    msw: [
+      graphql.query('IntrospectionQuery', (req, res, ctx) => res(ctx.data({}))),
+      graphql.mutation<CreateSongResponse, CreateSongVariables>(
+        'CreateSong',
+        (req, res, ctx) => {
+          const {
+            input: { name },
+          } = req.variables;
+
+          if (name === 'Fail') {
+            return res.networkError('Failed to connect');
+          }
+
+          if (name === 'Same') {
+            return res(
+              ctx.errors([
+                {
+                  message:
+                    'You already have a song with that name. Please select another.',
+                },
+              ]),
+            );
+          }
+
+          const newSong = {
+            __typename: 'Song',
+            id: 1,
+            name,
+            updatedAt: formatISO(Date.now()),
+          };
+
+          return res(
+            ctx.data({
+              createSong: {
+                message: 'Song was created.',
+                song: newSong,
+                success: true,
+              },
+            }),
+          );
+        },
+      ),
+    ],
+  },
 } as Meta;
 
-const mocks: MockedResponse<Record<string, any>>[] = [
-  {
-    request: {
-      query: CREATE_SONG,
-      variables: {
-        input: {
-          name: 'New Song',
-        },
-      } as CreateSongVariables,
-    },
-    result: {
-      data: {
-        createSong: {
-          message: 'Song was created.',
-          song: {
-            id: 2,
-            name: 'New Song',
-            updatedAt: formatISO(new Date(), { representation: 'date' }),
-          },
-          success: true,
-        },
-      } as CreateSongResponse,
-    },
-  },
-  {
-    request: {
-      query: CREATE_SONG,
-      variables: {
-        input: {
-          name: 'Same',
-        },
-      } as CreateSongVariables,
-    },
-    result: {
-      errors: [
-        new GraphQLError(
-          'You already have a song with that name. Please select another.',
-        ),
-      ],
-    },
-  },
-];
-
 export const Default: Story<AddSongDialogProps> = (args) => (
-  <MockedProvider mocks={mocks}>
+  <ClientProvider>
     <AddSongDialog {...args} />
-  </MockedProvider>
+  </ClientProvider>
 );
 
 Default.args = {

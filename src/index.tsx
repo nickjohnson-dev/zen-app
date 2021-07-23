@@ -6,6 +6,7 @@ import { RecoilRoot } from 'recoil';
 import * as Tone from 'tone';
 
 import { ApolloWrapper } from './ApolloWrapper';
+import { ClientProvider } from './features/api';
 import { App } from './features/app';
 import { AudioProvider } from './features/audio';
 import { AuthProvider } from './features/auth';
@@ -20,16 +21,18 @@ configureHotkeys({ ignoreRepeatedEventsWhenKeyHeldDown: false });
 });
 
 render(
-  <RecoilRoot>
-    <ApolloWrapper>
-      <AuthProvider>
-        <AudioProvider>
-          <I18NWrapper>
-            <App />
-          </I18NWrapper>
-        </AudioProvider>
-      </AuthProvider>
-    </ApolloWrapper>
-  </RecoilRoot>,
+  <ClientProvider>
+    <RecoilRoot>
+      <ApolloWrapper>
+        <AuthProvider>
+          <AudioProvider>
+            <I18NWrapper>
+              <App />
+            </I18NWrapper>
+          </AudioProvider>
+        </AuthProvider>
+      </ApolloWrapper>
+    </RecoilRoot>
+  </ClientProvider>,
   document.querySelector('#root'),
 );

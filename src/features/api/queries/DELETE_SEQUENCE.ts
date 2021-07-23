@@ -1,9 +1,13 @@
 import { gql } from '@apollo/client';
 
-export type DeleteSequenceInput = number;
-
 export interface DeleteSequenceResponse {
-  success: boolean;
+  deleteSequence: {
+    success: boolean;
+  };
+}
+
+export interface DeleteSequenceVariables {
+  id: number;
 }
 
 export const DELETE_SEQUENCE = gql`

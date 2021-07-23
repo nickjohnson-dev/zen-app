@@ -7,17 +7,17 @@ import {
   TextField,
   useThemeWithDefault,
 } from 'aria-ui';
-import { FC, MouseEventHandler, useCallback, useEffect, useState } from 'react';
+import { FC, MouseEventHandler, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Redirect } from 'react-router-dom';
 
-import { useLogin } from '../../api';
+import { formatError, urqlHooks } from '../../api';
 import { useAuth } from '../../auth';
 
 export type LoginProps = Record<string, never>;
 
 export const Login: FC<LoginProps> = () => {
-  const [login, { client, error, loading }] = useLogin();
+  const [{ error, fetching }, login] = urqlHooks.useLogin();
   const { getIsAuthenticated, handleLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,7 +43,10 @@ export const Login: FC<LoginProps> = () => {
       e.preventDefault();
 
       try {
-        const { data } = await login({ email, password });
+        const { data } = await login(
+          { email, password },
+          { additionalTypenames: ['User'] },
+        );
 
         if (!data) {
           throw new Error('Failed to log in.');
@@ -56,12 +59,6 @@ export const Login: FC<LoginProps> = () => {
     },
     [email, handleLogin, login, password],
   );
-
-  useEffect(() => {
-    if (getIsAuthenticated()) return;
-
-    client.resetStore();
-  }, [client, getIsAuthenticated]);
 
   return getIsAuthenticated() ? (
     <Redirect to="/" />
@@ -92,20 +89,24 @@ export const Login: FC<LoginProps> = () => {
             <TextField
               label={t('Email')}
               onValueChange={handleEmailChange}
+              placeholder="Enter email"
               type="email"
               value={email}
             />
             <TextField
               label={t('Password')}
               onValueChange={handlePasswordChange}
+              placeholder="Enter password"
               type="password"
               value={password}
             />
-            {error && <Notice status="error">{error.message}</Notice>}
+            {error && (
+              <Notice status="error">{formatError(error).message}</Notice>
+            )}
           </Stack>
           <Button
             color="brandPrimary"
-            isLoading={loading}
+            isLoading={fetching}
             sx={{ alignSelf: 'flex-end' }}
             text={t('Log in')}
             type="submit"

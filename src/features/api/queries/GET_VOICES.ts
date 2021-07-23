@@ -6,6 +6,8 @@ export interface GetVoicesResponse {
   voices: Voice[];
 }
 
+export type GetVoicesVariables = Record<string, never>;
+
 export const GET_VOICES = gql`
   query GetVoices {
     voices {

@@ -2,15 +2,17 @@ import { gql } from '@apollo/client';
 
 import { Sequence } from '../../../types';
 
-export interface CreateSequenceInput {
-  position: number;
-  trackId: number;
+export interface CreateSequenceResponse {
+  createSequence: {
+    sequence: Sequence;
+  };
 }
 
-export interface CreateSequenceResponse {
-  message: string;
-  sequence: Sequence;
-  success: boolean;
+export interface CreateSequenceVariables {
+  input: {
+    position: number;
+    trackId: number;
+  };
 }
 
 export const CREATE_SEQUENCE = gql`
@@ -34,7 +36,6 @@ export const CREATE_SEQUENCE = gql`
           id
         }
       }
-      success
     }
   }
 `;

@@ -2,16 +2,18 @@ import { gql } from '@apollo/client';
 
 import { Track } from '../../../types';
 
-export interface UpdateTrackInput {
-  id: number;
-  voiceId: number;
-  volume: number;
+export interface UpdateTrackResponse {
+  updateTrack: {
+    track: Track;
+  };
 }
 
-export interface UpdateTrackResponse {
-  message: string;
-  track: Track;
-  success: boolean;
+export interface UpdateTrackVariables {
+  input: {
+    id: number;
+    voiceId: number;
+    volume: number;
+  };
 }
 
 export const UPDATE_TRACK = gql`
@@ -30,7 +32,6 @@ export const UPDATE_TRACK = gql`
         }
         volume
       }
-      success
     }
   }
 `;

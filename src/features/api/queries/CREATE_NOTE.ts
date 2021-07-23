@@ -2,15 +2,17 @@ import { gql } from '@apollo/client';
 
 import { Note, Point } from '../../../types';
 
-export interface CreateNoteInput {
-  points: Point[];
-  sequenceId: number;
+export interface CreateNoteResponse {
+  createNote: {
+    note: Note;
+  };
 }
 
-export interface CreateNoteResponse {
-  message: string;
-  note: Note;
-  success: boolean;
+export interface CreateNoteVariables {
+  input: {
+    points: Point[];
+    sequenceId: number;
+  };
 }
 
 export const CREATE_NOTE = gql`

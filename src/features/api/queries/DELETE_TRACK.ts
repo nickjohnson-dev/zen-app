@@ -1,9 +1,13 @@
 import { gql } from '@apollo/client';
 
-export type DeleteTrackInput = number;
-
 export interface DeleteTrackResponse {
-  success: boolean;
+  deleteTrack: {
+    success: boolean;
+  };
+}
+
+export interface DeleteTrackVariables {
+  id: number;
 }
 
 export const DELETE_TRACK = gql`
